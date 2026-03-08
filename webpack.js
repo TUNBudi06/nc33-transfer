@@ -1,5 +1,6 @@
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const webpackRules = require('@nextcloud/webpack-vue-config/rules')
+const TerserPlugin = require('terser-webpack-plugin')
 
 // Override SVG rule to load as raw source string (needed for NcIconSvgWrapper)
 webpackRules.RULE_ASSETS = {
@@ -13,6 +14,17 @@ webpackRules.RULE_SVGS = {
 }
 
 webpackConfig.module.rules = Object.values(webpackRules)
+
+// Use parallel: false to prevent TerserPlugin worker threads from hanging
+// on low-resource servers (e.g. Debian VMs)
+webpackConfig.optimization = {
+	...webpackConfig.optimization,
+	minimizer: [
+		new TerserPlugin({
+			parallel: false,
+		}),
+	],
+}
 
 // Silence size warnings — Nextcloud handles chunking server-side
 webpackConfig.performance = {
