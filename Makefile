@@ -1,22 +1,22 @@
-.PHONY: npm-install
-npm-install:
-	npm install
+.PHONY: bun-install
+bun-install:
+	bun install
 
-.PHONY: npm-build
-npm-build: npm-install
-	npm run build
+.PHONY: bun-build
+bun-build: bun-install
+	bun run build
 
 .PHONY: icon
-icon: npm-install
-	sed 's/path/path fill="#fff"/g' \
+icon: bun-install
+	sed 's/<path/<path fill="#fff"/g' \
 		<node_modules/@mdi/svg/svg/cloud-upload.svg \
 		>img/app.svg
-	sed 's/path/path fill="#000"/g' \
+	sed 's/<path/<path fill="#000"/g' \
 		<node_modules/@mdi/svg/svg/cloud-upload.svg \
 		>img/app-dark.svg
 
 .PHONY: build
-build: npm-build icon
+build: bun-build icon
 
 .PHONY: dist
 dist: build

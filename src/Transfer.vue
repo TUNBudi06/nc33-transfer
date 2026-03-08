@@ -37,7 +37,7 @@
           v-model="hashAlgo"
           class="short"
           input-id="hashAlgo"
-          :label="t('transfer', 'Hash algorithm')"
+          :placeholder="t('transfer', 'Hash algorithm')"
           :clearable="true"
           :options="hashOptions" />
 
@@ -80,12 +80,7 @@ const hashAlgo = ref(null)
 const hash = ref('')
 const currentDirectory = ref(null)
 
-const hashOptions = [
-  { id: 'md5', label: 'MD5' },
-  { id: 'sha1', label: 'SHA1' },
-  { id: 'sha256', label: 'SHA256' },
-  { id: 'sha512', label: 'SHA512' },
-]
+const hashOptions = ['md5', 'sha1', 'sha256', 'sha512']
 
 // Computed
 const defaults = computed(() => {
@@ -131,7 +126,7 @@ function close() {
 function submit() {
   const fullName = `${finalName.value}.${finalExtension.value}`
   const filePath = join(currentDirectory.value, fullName)
-  enqueueTransfer(filePath, url.value, hashAlgo.value?.id || '', hash.value)
+  enqueueTransfer(filePath, url.value, hashAlgo.value || '', hash.value)
   close()
 }
 
