@@ -3,36 +3,36 @@
   "version": "0.6.4",
   "description": "Add a file to Nextcloud from a web link.",
   "scripts": {
-    "build": "NODE_ENV=production webpack --progress --config webpack.js"
+    "build": "webpack --progress --config webpack.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cociweb/nextcloud-transfer.git"
+    "url": "git+https://github.com/TUNBudi06/nc33-transfer.git"
   },
-  "author": "cociweb",
+  "author": "TUNBudi06",
   "license": "AGPL",
   "bugs": {
-    "url": "https://github.com/cociweb/nextcloud-transfer/issues"
+    "url": "https://github.com/TUNBudi06/nc33-transfer/issues"
   },
-  "homepage": "https://github.com/cociweb/nextcloud-transfer#readme",
+  "homepage": "https://github.com/TUNBudi06/nc33-transfer#readme",
   "browserslist": [
     "extends @nextcloud/browserslist-config"
   ],
   "devDependencies": {
-    "@nextcloud/browserslist-config": "^3.0.1",
-    "@nextcloud/webpack-vue-config": "^6.3.0"
+    "@nextcloud/browserslist-config": "^3.1.2",
+    "@nextcloud/webpack-vue-config": "^7.0.2"
   },
   "dependencies": {
     "@mdi/svg": "^7.4.47",
-    "@nextcloud/axios": "^2.5.1",
-    "@nextcloud/dialogs": "^7.1.0",
-    "@nextcloud/files": "^3.8.0",
-    "@nextcloud/l10n": "^3.4.0",
-    "@nextcloud/paths": "^2.1.0",
-    "@nextcloud/router": "^3.0.1",
-    "@nextcloud/vue": "^9.2.0",
+    "@nextcloud/axios": "^2.5.2",
+    "@nextcloud/dialogs": "^7.3.0",
+    "@nextcloud/files": "^4.0.0",
+    "@nextcloud/l10n": "^3.4.1",
+    "@nextcloud/paths": "^3.1.0",
+    "@nextcloud/router": "^3.1.0",
+    "@nextcloud/vue": "^9.5.0",
     "path-parse": "^1.0.7",
-    "vue": "^3.5.17",
-    "terser-webpack-plugin": "^5.3.14"
+    "vue": "^3.5.29",
+    "terser-webpack-plugin": "^5.3.17"
   }
 }
