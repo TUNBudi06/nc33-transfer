@@ -1,30 +1,31 @@
 <template>
-  <NcModal v-if="visible" @close="close">
-    <h2>{{ t('transfer', 'Upload by link') }}</h2>
+  <NcModal
+    :show="visible"
+    :name="t('transfer', 'Upload by link')"
+    size="normal"
+    @close="close"
+    @update:show="visible = $event">
 
     <div class="modal-content">
       <NcTextField
         v-model="url"
         :label="t('transfer', 'Link')"
         :label-visible="true"
-        placeholder="https://example.com/file.txt">
-      </NcTextField>
+        placeholder="https://example.com/file.txt" />
 
       <div class="row">
         <NcTextField
           v-model="chosenName"
           :label="t('transfer', 'File name')"
           :label-visible="true"
-          :placeholder="defaults.name">
-        </NcTextField>
-        .
+          :placeholder="defaults.name" />
+        <span class="separator">.</span>
         <NcTextField
           class="short"
           v-model="chosenExtension"
           :label="t('transfer', 'Extension')"
           :label-visible="true"
-          :placeholder="defaults.extension">
-        </NcTextField>
+          :placeholder="defaults.extension" />
       </div>
 
       <NcNoteCard type="info">
@@ -33,24 +34,25 @@
 
       <div class="row">
         <NcSelect
-          class="short"
           v-model="hashAlgo"
-          inputId="hashAlgo"
-          :options="['md5', 'sha1', 'sha256', 'sha512']">
-        </NcSelect>
+          class="short"
+          input-id="hashAlgo"
+          :label="t('transfer', 'Hash algorithm')"
+          :clearable="true"
+          :options="hashOptions" />
 
         <NcTextField
           v-model="hash"
-          :label="t('transfer', 'Checksum')">
-        </NcTextField>
+          :label="t('transfer', 'Checksum')"
+          :label-visible="true" />
       </div>
 
       <div class="buttons">
         <NcButton
           type="primary"
-          nativeType="submit"
-          @click="submit"
-          :disabled="!isValid">
+          native-type="submit"
+          :disabled="!isValid"
+          @click="submit">
           <template #icon>
             <NcIconSvgWrapper :svg="TransferSvg" />
           </template>
@@ -61,117 +63,109 @@
   </NcModal>
 </template>
 
-<script>
-  import { NcButton, NcIconSvgWrapper, NcModal, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
-  import TransferSvg from '@mdi/svg/svg/cloud-upload.svg'
-  import pathParse from 'path-parse'
-  import { join as joinPaths } from '@nextcloud/paths'
-  import { enqueueTransfer } from './ajax.js'
+<script setup>
+import { ref, computed } from 'vue'
+import { NcButton, NcIconSvgWrapper, NcModal, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import { translate as t } from '@nextcloud/l10n'
+import { basename, extname, join } from '@nextcloud/paths'
+import TransferSvg from '@mdi/svg/svg/cloud-upload.svg'
+import { enqueueTransfer } from './ajax.js'
 
-  export default {
-    components: { NcButton, NcIconSvgWrapper, NcModal, NcNoteCard, NcSelect, NcTextField },
+// State
+const visible = ref(false)
+const url = ref('')
+const chosenName = ref('')
+const chosenExtension = ref('')
+const hashAlgo = ref(null)
+const hash = ref('')
+const currentDirectory = ref(null)
 
-    data() {
-      return {
-        TransferSvg,
-        url: '',
-        chosenName: '',
-        chosenExtension: '',
-        hashAlgo: null,
-        hash: '',
-        currentDirectory: null,
-        visible: false
-      }
-    },
+const hashOptions = [
+  { id: 'md5', label: 'MD5' },
+  { id: 'sha1', label: 'SHA1' },
+  { id: 'sha256', label: 'SHA256' },
+  { id: 'sha512', label: 'SHA512' },
+]
 
-    computed: {
-      defaults() {
-        try {
-          const url = new URL(this.url)
-          const path = pathParse(url.pathname)
-
-          return {
-            name: path.name,
-            extension: path.ext.substring(1)
-          }
-        } catch (TypeError) {
-          // The current URL is not valid
-          return { name: '', extension: '' }
-        }
-      },
-
-      name() {
-        return this.chosenName || this.defaults.name
-      },
-
-      extension() {
-        return this.chosenExtension || this.defaults.extension
-      },
-
-      isValid() {
-        try {
-          const url = new URL(this.url)
-        } catch (TypeError) {
-          // The current URL is not valid
-          return false
-        }
-
-        return this.name && this.extension
-      }
-    },
-
-    methods: {
-      open(context) {
-        this.url = ''
-        this.chosenName = ''
-        this.chosenExtension = ''
-        this.hashAlgo = null
-        this.hash = ''
-        this.currentDirectory = context.path
-        this.visible = true
-      },
-
-      close() {
-        this.visible = false
-      },
-
-      submit() {
-        const fullName = `${this.name}.${this.extension}`
-        const path = joinPaths(this.currentDirectory, fullName)
-        enqueueTransfer(path, this.url, this.hashAlgo || '', this.hash)
-        this.close()
-      }
-    }
+// Computed
+const defaults = computed(() => {
+  try {
+    const parsed = new URL(url.value)
+    const pathname = parsed.pathname
+    const ext = extname(pathname).replace(/^\./, '')
+    const name = basename(pathname, extname(pathname))
+    return { name, extension: ext }
+  } catch {
+    return { name: '', extension: '' }
   }
+})
+
+const finalName = computed(() => chosenName.value || defaults.value.name)
+const finalExtension = computed(() => chosenExtension.value || defaults.value.extension)
+
+const isValid = computed(() => {
+  try {
+    new URL(url.value)
+  } catch {
+    return false
+  }
+  return !!(finalName.value && finalExtension.value)
+})
+
+// Methods
+function open(context) {
+  url.value = ''
+  chosenName.value = ''
+  chosenExtension.value = ''
+  hashAlgo.value = null
+  hash.value = ''
+  // context is an IFolder — use .path getter
+  currentDirectory.value = context.path
+  visible.value = true
+}
+
+function close() {
+  visible.value = false
+}
+
+function submit() {
+  const fullName = `${finalName.value}.${finalExtension.value}`
+  const filePath = join(currentDirectory.value, fullName)
+  enqueueTransfer(filePath, url.value, hashAlgo.value?.id || '', hash.value)
+  close()
+}
+
+// Expose open() so main.js can call it via mounted instance
+defineExpose({ open })
 </script>
 
 <style scoped>
-h2, .modal-content {
-  margin: calc(var(--default-grid-baseline) * 4);
-}
-
 .modal-content {
   display: flex;
   flex-direction: column;
   gap: calc(var(--default-grid-baseline) * 4);
+  margin: calc(var(--default-grid-baseline) * 4);
 }
 
 .row {
   display: flex;
-  align-items: baseline;
-  gap: calc(var(--default-grid-baseline) * 4);
+  align-items: flex-end;
+  gap: calc(var(--default-grid-baseline) * 2);
 }
 
-.short {
-  width: 12em !important;
+.row .short {
+  width: 10em;
+  flex-shrink: 0;
 }
 
-.notecard {
-  margin: 0 !important;
+.separator {
+  padding-bottom: calc(var(--default-grid-baseline) * 1.5);
+  font-weight: bold;
+  line-height: 1;
 }
 
 .buttons {
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
 }
 </style>
