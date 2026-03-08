@@ -19,7 +19,7 @@ addNewFileMenuEntry({
 	order: -1,
 
 	// Only display in folders where this user has permission to create files
-	if: context => (context.permissions & Permission.CREATE) !== 0,
+	enabled: context => (context.permissions & Permission.CREATE) !== 0,
 
 	async handler(context, content) {
 		transferComponent.open(context)

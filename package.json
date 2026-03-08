@@ -19,8 +19,13 @@
     "extends @nextcloud/browserslist-config"
   ],
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/helper-compilation-targets": "^7.28.6",
     "@nextcloud/browserslist-config": "^3.1.2",
-    "@nextcloud/webpack-vue-config": "^7.0.2"
+    "@nextcloud/webpack-vue-config": "^7.0.2",
+    "babel-loader": "^10.1.0",
+    "browserslist": "^4.28.1",
+    "caniuse-lite": "^1.0.30001777"
   },
   "dependencies": {
     "@mdi/svg": "^7.4.47",

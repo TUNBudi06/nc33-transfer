@@ -65,7 +65,7 @@
   import { NcButton, NcIconSvgWrapper, NcModal, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
   import TransferSvg from '@mdi/svg/svg/cloud-upload.svg'
   import pathParse from 'path-parse'
-  import { joinPaths } from '@nextcloud/paths'
+  import { join as joinPaths } from '@nextcloud/paths'
   import { enqueueTransfer } from './ajax.js'
 
   export default {
