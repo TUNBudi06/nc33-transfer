@@ -1,6 +1,8 @@
 <?php
 namespace OCA\Transfer\Controller;
 
+use OCP\AppFramework\Attributes\NoAdminRequired;
+use OCP\AppFramework\Attributes\NoCSRFRequired;
 use OCP\BackgroundJob\IJobList;
 use OCP\IRequest;
 use OCP\AppFramework\Controller;
@@ -11,15 +13,16 @@ use OCA\Transfer\BackgroundJob\TransferJob;
 use OCA\Transfer\Service\TransferService;
 
 class TransferController extends Controller {
-	private $userId;
-	private $jobList;
+	private string $userId;
+	private IJobList $jobList;
+	private TransferService $service;
 
 	public function __construct(
-		$AppName,
+		string $AppName,
 		IRequest $request,
 		IJobList $jobList,
 		TransferService $service,
-		$UserId
+		string $UserId
 	) {
 		parent::__construct($AppName, $request);
 		$this->userId = $UserId;
@@ -27,23 +30,15 @@ class TransferController extends Controller {
 		$this->service = $service;
 	}
 
-	/**
-	 * CAUTION: the @Stuff turns off security checks; for this page no admin is
-	 *          required and no CSRF check. If you don't know what CSRF is, read
-	 *          it up in the docs or you might create a security hole. This is
-	 *          basically the only required method to add this exemption, don't
-	 *          add it to any other method if you don't exactly know what it does
-	 *
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 */
-	public function transfer(string $path, string $url, string $hashAlgo, string $hash) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function transfer(string $path, string $url, string $hashAlgo, string $hash): DataResponse {
 		$this->jobList->add(TransferJob::class, [
-			"userId" => $this->userId,
-			"path" => $path,
-			"url" => $url,
-			"hashAlgo" => $hashAlgo,
-			"hash" => $hash,
+			'userId'   => $this->userId,
+			'path'     => $path,
+			'url'      => $url,
+			'hashAlgo' => $hashAlgo,
+			'hash'     => $hash,
 		]);
 
 		return new DataResponse(true, Http::STATUS_OK);

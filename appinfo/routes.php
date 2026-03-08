@@ -1,10 +1,10 @@
 <?php
 return [
-    'routes' => [
-	[
-	    'name' => 'transfer#transfer',
-	    'url' => 'ajax/transfer.php',
-	    'verb' => 'POST'
-	]
-    ]
+	'routes' => [
+		[
+			'name' => 'transfer#transfer',
+			'url' => '/transfer',
+			'verb' => 'POST',
+		],
+	],
 ];

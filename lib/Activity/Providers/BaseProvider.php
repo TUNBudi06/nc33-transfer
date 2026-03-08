@@ -8,25 +8,25 @@ use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 
 abstract class BaseProvider implements IProvider {
-    protected $languageFactory;
-    protected $urlGenerator;
+	protected IManager $activityManager;
+	protected IFactory $languageFactory;
+	protected IURLGenerator $urlGenerator;
 
-    public function __construct(
-        IManager $activityManager,
-        IFactory $languageFactory,
-        IURLGenerator $urlGenerator
-    ) {
-        $this->activityManager = $activityManager;
-        $this->languageFactory = $languageFactory;
-        $this->urlGenerator = $urlGenerator;
-    }
+	public function __construct(
+		IManager $activityManager,
+		IFactory $languageFactory,
+		IURLGenerator $urlGenerator
+	) {
+		$this->activityManager = $activityManager;
+		$this->languageFactory = $languageFactory;
+		$this->urlGenerator = $urlGenerator;
+	}
 
-    protected function setIcon(IEvent $event) {
-        // TODO: Respect activityManager->getRequirePNG()
-        $event->setIcon(
-            $this->urlGenerator->getAbsoluteUrl(
-                $this->urlGenerator->imagePath("transfer", "app-dark.svg")
-            )
-        );
-    }
+	protected function setIcon(IEvent $event): void {
+		$event->setIcon(
+			$this->urlGenerator->getAbsoluteUrl(
+				$this->urlGenerator->imagePath('transfer', 'menu.png')
+			)
+		);
+	}
 }

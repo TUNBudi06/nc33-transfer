@@ -12,7 +12,7 @@ import { generateUrl } from '@nextcloud/router'
 export async function enqueueTransfer(path, url, hashAlgo, hash) {
 	try {
 		await axios.post(
-			generateUrl('/apps/transfer/ajax/transfer.php'),
+			generateUrl('/apps/transfer/transfer'),
 			{ path, url, hashAlgo, hash },
 		)
 		showInfo(t('transfer', 'The upload is queued and will begin processing soon.'))

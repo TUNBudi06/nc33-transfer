@@ -6,105 +6,114 @@ use OCA\Transfer\Activity\Providers\TransferStartedProvider;
 use OCA\Transfer\Activity\Providers\TransferSucceededProvider;
 
 use GuzzleHttp\Exception\BadResponseException;
-use OC\Files\Filesystem;
 use OCP\Activity\IManager;
+use OCP\Files\IRootFolder;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\LocalServerException;
 
 class TransferService {
-	protected $activityManager;
-	protected $clientService;
+	protected IManager $activityManager;
+	protected IClientService $clientService;
+	protected IRootFolder $rootFolder;
 
 	public function __construct(
 		IManager $activityManager,
-		IClientService $clientService
+		IClientService $clientService,
+		IRootFolder $rootFolder
 	) {
 		$this->activityManager = $activityManager;
 		$this->clientService = $clientService;
+		$this->rootFolder = $rootFolder;
 	}
 
 	/**
-	 * @return Whether the transfer succeeded.
+	 * @return bool Whether the transfer succeeded.
 	 */
-	public function transfer(string $userId, string $path, string $url, string $hashAlgo, string $hash) {
-		\OC_Util::tearDownFS();
-		\OC_Util::setupFS($userId);
-
+	public function transfer(string $userId, string $path, string $url, string $hashAlgo, string $hash): bool {
 		$this->generateStartedEvent($userId, $path, $url);
 
-		$tmpPath = tempnam(sys_get_temp_dir(), "nextcloud-transfer-");
+		$tmpPath = tempnam(sys_get_temp_dir(), 'nextcloud-transfer-');
 
 		$client = $this->clientService->newClient();
 
 		try {
-			$response = $client->get($url, ["sink" => $tmpPath, "timeout" => 0]);
+			$client->get($url, ['sink' => $tmpPath, 'timeout' => 0]);
 		} catch (BadResponseException $exception) {
-			// The HTTP request had an unsuccessful response code.
 			$this->generateFailedEvent($userId, $path, $url);
+			@unlink($tmpPath);
 			return false;
 		} catch (LocalServerException $exception) {
-			// The user tried to access `localhost` or similar.
 			$this->generateBlockedEvent($userId, $path, $url);
+			@unlink($tmpPath);
 			return false;
 		}
 
-		if ($hash == "" || hash_file($hashAlgo, $tmpPath) == $hash) {
-			Filesystem::file_put_contents($path, fopen($tmpPath, 'r'));
+		if ($hash === '' || hash_file($hashAlgo, $tmpPath) === $hash) {
+			$userFolder = $this->rootFolder->getUserFolder($userId);
+			$stream = fopen($tmpPath, 'r');
+			$userFolder->newFile($path, $stream);
+			if (is_resource($stream)) {
+				fclose($stream);
+			}
 			unlink($tmpPath);
 
-			$this->generateSucceededEvent($userId, $path, $url);
+			$this->generateSucceededEvent($userId, $path, $url, $userFolder);
 			return true;
 		} else {
 			unlink($tmpPath);
-
 			$this->generateHashFailedEvent($userId, $path, $url);
 			return false;
 		}
 	}
 
-	protected function generateStartedEvent(string $userId, string $path, string $url) {
+	protected function generateStartedEvent(string $userId, string $path, string $url): void {
 		$event = $this->activityManager->generateEvent();
-		$event->setApp("transfer");
+		$event->setApp('transfer');
 		$event->setType(TransferStartedProvider::TYPE_TRANSFER_STARTED);
 		$event->setAffectedUser($userId);
-		$event->setSubject(TransferStartedProvider::SUBJECT_TRANSFER_STARTED, ["url" => $url]);
+		$event->setSubject(TransferStartedProvider::SUBJECT_TRANSFER_STARTED, ['url' => $url]);
 		$this->activityManager->publish($event);
 	}
 
-	protected function generateFailedEvent(string $userId, string $path, string $url) {
+	protected function generateFailedEvent(string $userId, string $path, string $url): void {
 		$event = $this->activityManager->generateEvent();
-		$event->setApp("transfer");
+		$event->setApp('transfer');
 		$event->setType(TransferFailedProvider::TYPE_TRANSFER_FAILED);
 		$event->setAffectedUser($userId);
-		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_FAILED, ["url" => $url]);
+		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_FAILED, ['url' => $url]);
 		$this->activityManager->publish($event);
 	}
 
-	protected function generateHashFailedEvent(string $userId, string $path, string $url) {
+	protected function generateHashFailedEvent(string $userId, string $path, string $url): void {
 		$event = $this->activityManager->generateEvent();
-		$event->setApp("transfer");
+		$event->setApp('transfer');
 		$event->setType(TransferFailedProvider::TYPE_TRANSFER_FAILED);
 		$event->setAffectedUser($userId);
-		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_HASH_FAILED, ["url" => $url]);
+		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_HASH_FAILED, ['url' => $url]);
 		$this->activityManager->publish($event);
 	}
 
-	protected function generateBlockedEvent(string $userId, string $path, string $url) {
+	protected function generateBlockedEvent(string $userId, string $path, string $url): void {
 		$event = $this->activityManager->generateEvent();
-		$event->setApp("transfer");
+		$event->setApp('transfer');
 		$event->setType(TransferFailedProvider::TYPE_TRANSFER_FAILED);
 		$event->setAffectedUser($userId);
-		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_BLOCKED, ["url" => $url]);
+		$event->setSubject(TransferFailedProvider::SUBJECT_TRANSFER_BLOCKED, ['url' => $url]);
 		$this->activityManager->publish($event);
 	}
 
-	protected function generateSucceededEvent(string $userId, string $path, string $url) {
+	protected function generateSucceededEvent(string $userId, string $path, string $url, $userFolder): void {
 		$event = $this->activityManager->generateEvent();
-		$event->setApp("transfer");
+		$event->setApp('transfer');
 		$event->setType(TransferSucceededProvider::TYPE_TRANSFER_SUCCEEDED);
 		$event->setAffectedUser($userId);
-		$event->setSubject(TransferSucceededProvider::SUBJECT_TRANSFER_SUCCEEDED, ["url" => $url]);
-		$event->setObject("files", Filesystem::getFileInfo($path)->getId(), $path);
+		$event->setSubject(TransferSucceededProvider::SUBJECT_TRANSFER_SUCCEEDED, ['url' => $url]);
+		try {
+			$fileId = $userFolder->get($path)->getId();
+			$event->setObject('files', $fileId, $path);
+		} catch (\Exception $e) {
+			// file ID not critical
+		}
 		$this->activityManager->publish($event);
 	}
 }
